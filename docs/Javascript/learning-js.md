@@ -1,12 +1,12 @@
 ---
-title: Advanced
-sidebar_position: 3
+title: Learning Javascript
+sidebar_position: 1
 ---
 
-# Hello world
+# Các Extensions hữu ích cho vs code (Javascript)
 
 - level 1:
-    - level 2:
+  - level 2:
 
 ## demo 1
 ádfsdf
