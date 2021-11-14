@@ -216,20 +216,52 @@ Các trường hợp sử dụng:
 
 Giống như các framework khác, Next.js cũng có hệ thống router được built on.
 
-Khi bạn tạo 1 file bên trong thư mục `pages` thì file đó được tự động cập nhật thành 1 route.
+Khác với React, để tạo 1 route ta cần phải sử dụng component `<Route />` được cung cấp từ `react-router-dom` và phải truyền `path` tham số. Nhưng đối với Next.js, ta chỉ cần tạo file bên trong thư mục `pages`, các file .js sẽ được build thành các route (component -> route).
 
-Các file cấp con cũng có thể truy cập được từ thư mục `pages` trở vào.
-```
-`pages/blog/first-blog.js` -> '/blog/first-blog'
-```
+Ta có 3 loại Route sau:
 
-Route sẽ tự động hiểu file có tên `index` làm file gốc của thư mục.
+- **Index routes**: Next.js sẽ tự động nhận các file có tên `index.js` làm route gốc.
 ```
 `pages/index.js` -> '/'
 `pages/blog/index.js` -> '/blog'
 ```
+- **Nested routes**: Ta có thể thêm folder bên trong `pages`, và các file được tao bên trong folder đó sẽ được gọi là nested route.
+```
+`pages/blog/first-blog.js` -> '/blog/first-blog'
+```
+- **Dynamic routes**: các param của route sẽ được truyền cho file được đặt dấu ngoặc vuông bao ngoài, đây là cách nhận param của route.
+```
+`pages/blog/[postId].js` -> '/blog/:postId' (vd: '/blog/10')
+// postId = 10
+`pages/blog/[...all].js` -> '/blog/*' (vd: '/blog/10', '/blog/post/10')
+```
+- Khi tham số path khớp với một route, nó sẽ gửi một tham số query đến page đó.
 
-- ### Thành phần Link
+Vd: Khi ta truy cập route `post/abc` -> `pages/post/[postId].js` thì đối tượng query được trả về là: `{ "postId": "abc" }`.
+
+- Đối với route `post/abc?foo=bar` thì đối tượng `query` được trả về là:
+```js
+{ "foo": "bar", "postId": "abc" }
+```
+
+**Chú ý**: Trong trường hợp tham số query trong route trùng với tên file, Next.js sẽ ưu tiên lựa chọn query khớp đầu:
+```
+`post/abc?postId=123` -> { "postId": "abc" }
+```
+
+Khi ta sử dụng cú pháp `...` trong dấu ngoặc vuông, route sẽ khớp với tất cả các path chèn thêm vào sau.
+
+**Optional catch all**: Sử dụng `post/[[...slug]].js` sẽ khớp với tất cả các route `/post`, `/post/abc` và `/post/a/b/c`.
+
+- ### Có 4 loại routing phổ biến:
+- Pre-defined routes
+- Dynamic routes
+- Catch all routes
+- Optional catch all routes
+Mức độ ưu tiên routing:
+Pre-defined routes >> Dynamic routes >> Catch all routes `slug.js >> [slug].js >> [...slug].js`.
+
+### Thành phần Link
 
 Đây là thành phần của React, nó được cung cấp thực hiện chuyển đổi các route bên phía client mà không phải reload lại trang
 
@@ -259,32 +291,26 @@ Có 2 cách để truyền `path` trong Link:
 
 Để truy cập vào đối tượng `router` trong thành phần React, ta có thể sử dụng `useRouter()` hoặc `withRouter()`.
 
-- ### Dynamic Routes
+### API routes
+Các file API đều được tạo bên trong thư mục `pages/api`, cũng giống như route nó sẽ khớp khi đúng tên file.
 
-Để khớp với các route động ta sẽ sử dụng dấu ngoặc vuông để biểu thị, tên bên trong sẽ là tham số khớp với tham số trên route.
-```
-`pages/blog/[postId].js` -> '/blog/:postId' (vd: '/blog/10')
-// postId = 10
-`pages/blog/[...all].js` -> '/blog/*' (vd: '/blog/10', '/blog/post/10')
-```
-
-- Khi tham số path khớp với một route, nó sẽ gửi một tham số query đến page đó.
-
-Vd: Khi ta truy cập route `post/abc` -> `pages/post/[postId].js` thì đối tượng query được trả về là: `{ "postId": "abc" }`.
-
-- Đối với route `post/abc?foo=bar` thì đối tượng `query` được trả về là:
+Trong các file sẽ là các function xử lý việc trả về response khi nhận request:
 ```js
-{ "foo": "bar", "postId": "abc" }
+export default function handler(req, res) {
+  res.status(200).json({ name: 'John Doe' })
+}
 ```
 
-**Chú ý**: Trong trường hợp tham số query trong route trùng với tên file, Next.js sẽ ưu tiên lựa chọn query khớp đầu:
-```
-`post/abc?postId=123` -> { "postId": "abc" }
-```
+- ### API middleware:
+API routes cung cấp các middleware để ta tiện xử lý `request` khi nhận:
+- `req.cookies`: đây là đối tượng cookie được gửi từ client, mặc định là `{}`
+- `req.query`: là đối tượng chứa query string, mặc định là `{}`
+- `req.body`: đối tượng chứa thông tin data gửi từ client.
 
-Khi ta sử dụng cú pháp `...` trong dấu ngoặc vuông, route sẽ khớp với tất cả các path chèn thêm vào sau.
+- ### Response Helper:
+Đối tượng `response` bao gồm:
+- `res.status(code)`: trạng thái trả về của đối tượng response.
+- `res.json(body)`: trả về dữ liệu json
+- `res.send(body)`: trả về các kiểu dl: string, object, buffer.
+- `res.redirect([status ,] path)`: chuyển hướng tới path khác, optional status mặc định là: 307.
 
-Sử dụng `post/[[...slug]].js` sẽ khớp với tất cả các route `/post`, `/post/abc` và `/post/a/b/c`.
-
-- ### Chú ý:
-Các route tĩnh sẽ được ưu tiên trước đối với route động, route động sẽ được ưu tiên hơn đối với tất cả các route. `slug.js >> [slug].js >> [...slug].js`
